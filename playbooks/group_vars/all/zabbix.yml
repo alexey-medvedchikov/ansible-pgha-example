@@ -1,0 +1,10 @@
+---
+
+zabbix_repo: zabbix
+zabbix_version: 2.4
+agent_listenip: "{{ ansible_default_ipv4['address'] }}"
+agent_hostname: "{{ ansible_fqdn | default(ansible_hostname) }}"
+agent_server: zabbix.local
+agent_serveractive: zabbix.local
+agent_include: /etc/zabbix/zabbix_agentd.d
+agent_logfile: /var/log/zabbix-agent/zabbix_agentd.log

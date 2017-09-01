@@ -1,0 +1,11 @@
+[lbs]
+lb0   ansible_ssh_host=127.0.0.1 ansible_host=127.0.0.1 wait_for_ssh_delay=1
+lb1   ansible_ssh_host=127.0.0.1 ansible_host=127.0.0.1 wait_for_ssh_delay=1
+
+[dbs]
+db0   ansible_ssh_host=127.0.0.1 ansible_host=127.0.0.1 wait_for_ssh_delay=1
+db1   ansible_ssh_host=127.0.0.1 ansible_host=127.0.0.1 wait_for_ssh_delay=1
+db2   ansible_ssh_host=127.0.0.1 ansible_host=127.0.0.1 wait_for_ssh_delay=1
+
+[backups]
+backup0 ansible_ssh_host=127.0.0.1 ansible_host=127.0.0.1 wait_for_ssh_delay=1

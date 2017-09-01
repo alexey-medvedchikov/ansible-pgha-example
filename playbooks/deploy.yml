@@ -1,0 +1,41 @@
+---
+
+- hosts: all
+  become: off
+  gather_facts: no
+  pre_tasks:
+    - name: wait for ssh on host
+      wait_for:
+        host: "{{ ansible_ssh_host if ansible_ssh_host else inventory_hostname }}"
+        port: 22
+        delay: 0
+        connect_timeout: 3
+        timeout: 300
+        state: started
+      delegate_to: "{% set bastion_host = lookup('env', 'BASTION_HOST') %}{{ 'localhost' if bastion_host == '' else bastion_host }}"
+      tags: ['pre_tasks']
+
+    - name: gather facts from machines
+      setup:
+      tags: ['pre_tasks']
+
+- hosts: "{{ target }}"
+  become: on
+  roles:
+    - { role: apt, tags: ['apt']  }
+    - { role: quirks, tags: ['quirks']  }
+    - { role: UnderGreen.syslog-ng, tags: ['syslog-ng']  }
+    - role: alexey-medvedchikov.pgbouncer
+      when: "'lbs' in group_names"
+    - role: alexey-medvedchikov.pgpool2
+      when: "'lbs' in group_names"
+    - role: alexey-medvedchikov.barman
+      when: "'backups' in group_names"
+    - role: pg-performance
+      when: "'backups' in group_names"
+    - role: UnderGreen.postgresql
+      when: "'dbs' in group_names"
+    - role: alexey-medvedchikov.repmgr
+      when: "'dbs' in group_names"
+    - { role: dj-wasabi.zabbix-agent, tags: ['zabbix']  }
+    - { role: zabbix-userparameters, tags: ['zabbix']  }

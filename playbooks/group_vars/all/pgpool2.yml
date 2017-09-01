@@ -1,0 +1,37 @@
+---
+
+pgpool2_listen_addresses: 127.0.0.1
+pgpool2_port: 5432
+pgpool2_master_slave_mode: on
+pgpool2_master_slave_sub_mode: stream
+pgpool2_load_balance_mode: off
+pgpool2_enable_pool_hba: on
+pgpool2_pool_passwd: pool_passwd
+pgpool2_num_init_children: "{{ (groups['dbs'] | length) * 12 + 10}}"
+pgpool2_max_pool: 1
+pgpool2_sr_check_period: 10
+pgpool2_health_check_period: 0
+pgpool2_fail_over_on_backend_error: "on"
+pgpool2_auto_reattach: "on"
+pgpool2_sr_check_user: postgres
+pgpool2_sr_check_password: "{{ postgres_passwd }}"
+pgpool2_pcp_user_name: pcpadmin
+pgpool2_pid_file_name: /var/run/postgresql/pgpool.pid
+
+pgpool2_pool_users:
+  - name: postgres
+    pass: "{{ postgres_passwd }}"
+  - name: cdws
+    pass: "{{ cdws_passwd }}"
+
+pgpool2_backends: |
+  [{% for inventory_hostname in groups['dbs'] %}
+  {{ '{' }}
+    'name': '{{ inventory_hostname }}',
+    'host': '{{ hostvars[inventory_hostname].ansible_default_ipv4.address }}',
+    'port': 5432,
+    'weight': 1,
+    'data_directory': '/var/lib/postgresql/9.4/main',
+    'flag': 'ALLOW_TO_FAILOVER'
+  {{ '}' }}{% if not loop.last %},{% endif %}
+  {% endfor %}]

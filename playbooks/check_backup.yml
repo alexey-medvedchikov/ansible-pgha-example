@@ -1,0 +1,103 @@
+---
+
+- hosts: all
+  tasks:
+    - name: Add local host for checking purposes
+      add_host:
+        name: localhost
+        hostname: localhost
+        ansible_connection: local
+        ansible_python_interpreter: python2
+
+- hosts: all
+  tasks:
+    - name: Write .pgpass
+      copy:
+        dest: ~/.pgpass
+        content: |
+          *:*:*:postgres:{{ postgres_passwd }}
+        mode: 0600
+      become: no
+      when: inventory_hostname == 'localhost'
+
+    - name: Stop repmgrd
+      service:
+        name: repmgrd
+        state: stopped
+      become: yes
+      when: inventory_hostname == 'dbs'
+
+    - name: Make backup
+      shell: barman backup main
+      become: yes
+      become_user: barman
+      when: inventory_hostname == 'backup0'
+
+    - name: Generate some Data
+      shell: >
+        pgbench -i -s 10 -h {{ hostvars[item].ansible_ssh_host }}
+        -p {{ hostvars[item].pgbouncer_listen_port }} -U postgres
+      with_items: "{{ groups['lbs'] }}"
+      become: no
+      when: inventory_hostname == 'localhost'
+
+    - name: Stop postgresql
+      service:
+        name: postgresql
+        state: stopped
+      become: yes
+      when: inventory_hostname == 'db0'
+
+    - name: Remove postgresql database cluster files
+      file:
+        path: /var/lib/postgresql/9.4/main
+        state: absent
+      become: yes
+      when: inventory_hostname == 'db0'
+
+    - name: Restore restore backup
+      shell: >
+        barman recover --remote-ssh-command 'ssh postgres@{{ hostvars[groups['dbs'][0]].ansible_ssh_host }}'
+        main latest /var/lib/postgresql/9.4/main
+      become: yes
+      become_user: barman
+      when: inventory_hostname == 'backup0'
+
+    - name: Start postgresql
+      service:
+        name: postgresql
+        state: started
+      become: yes
+      when: inventory_hostname == 'db0'
+
+    - name: Wait while postgresql starts
+      shell: |
+        for i in {1..30}; do
+          pg_isready -h 127.0.0.1 -p 5432 && exit 0
+          sleep 1
+        done
+        exit 1
+      become: yes
+      when: inventory_hostname == 'db0'
+
+    - name: Start repmgrd
+      service:
+        name: repmgrd
+        state: started
+      become: yes
+      when: inventory_hostname == 'dbs'
+
+    - name: Attach restored master to pgpool2
+      shell: >
+        pcp_attach_node 1 127.0.0.1 9898 {{ pgpool2_pcp_user_name }}
+        {{ pgpool2_pcp_user_password }} 0
+      become: yes
+      when: inventory_hostname == 'lbs'
+
+    - name: Check postgresql availability via load-balancers
+      shell: >
+        pgbench -i -s 10 -h {{ hostvars[item].ansible_ssh_host }}
+        -p {{ hostvars[item].pgbouncer_listen_port }} -U postgres
+      with_items: "{{ groups['lbs'] }}"
+      become: no
+      when: inventory_hostname == 'localhost'

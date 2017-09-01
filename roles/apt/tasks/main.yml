@@ -1,0 +1,50 @@
+---
+
+- name: set up base apt repositories
+  copy:
+    dest: /etc/apt/sources.list
+    content: |
+      {% for repo in apt_repositories_base %}{% if repo.state == 'present' %}
+      {{ repo.repo }}
+      {% endif %}{% endfor %}
+  when: apt_repositories_base is defined
+
+- name: set up apt repositories
+  apt_repository:
+    repo: "{{ item.repo }}"
+    state: "{{ item.state }}"
+    update_cache: no
+  with_items: "{{ apt_repositories|default([]) }}"
+
+- name: set up apt repository keys
+  apt_key:
+    url: "{{ item.url }}"
+    state: "{{ item.state }}"
+  with_items: "{{ apt_keys|default([]) }}"
+
+- name: set up apt preferences
+  copy:
+    dest: /etc/apt/preferences.d/ansible-managed
+    content: |
+      {% for pref in apt_preferences_list %}
+      Package: {{ pref.package }}
+      Pin: {{ pref.pin }}
+      Pin-Priority: {{ pref.priority }}
+      {% endfor %}
+  when: apt_preferences_list is defined
+
+- name: update apt package cache
+  apt:
+    update_cache: yes
+
+- name: install base packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ apt_base_packages|default([]) }}"
+
+- name: install custom packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ apt_packages|default([]) }}"

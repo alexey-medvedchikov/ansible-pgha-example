@@ -1,0 +1,56 @@
+---
+
+- hosts: all
+  tasks:
+    - name: Add local host for checking purposes
+      add_host:
+        name: localhost
+        hostname: localhost
+        ansible_connection: local
+        ansible_python_interpreter: python2
+
+- hosts: all
+  tasks:
+    - name: Write .pgpass
+      copy:
+        dest: ~/.pgpass
+        content: |
+          *:*:*:postgres:{{ postgres_passwd }}
+        mode: 0600
+      become: no
+      when: inventory_hostname == 'localhost'
+
+    - name: Stop local services on dbs and lbs nodes
+      shell: >
+        pkill -SEGV {{ item.process_name }}
+      become: yes
+      ignore_errors: yes
+      when: inventory_hostname == "{{ item.host }}"
+      with_items:
+        - { host: db0, process_name: repmgrd }
+        - { host: lb1, process_name: pgpool }
+        - { host: lb1, process_name: pgbouncer }
+
+    - name: Waiting for failover to happen
+      wait_for:
+        timeout: 120
+      when: inventory_hostname == 'localhost'
+
+    - name: Check that service is running
+      shell:
+        /etc/init.d/{{ item.service_name }} status | grep 'is running'
+      become: yes
+      changed_when: false
+      when: inventory_hostname == "{{ item.host }}"
+      with_items:
+        - { host: db0, service_name: repmgrd }
+        - { host: lb1, service_name: pgpool2 }
+        - { host: lb1, service_name: pgbouncer }
+
+    - name: Check cluster availability
+      shell: >
+        pgbench -i -s 10 -h {{ hostvars[item].ansible_ssh_host }}
+        -p {{ hostvars[item].pgbouncer_listen_port }} -U postgres
+      with_items: "{{ groups['lbs'] }}"
+      become: no
+      when: inventory_hostname == 'localhost'

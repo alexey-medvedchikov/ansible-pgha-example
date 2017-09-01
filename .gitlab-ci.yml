@@ -1,0 +1,56 @@
+---
+
+image: pgsql-ha-example-runner
+
+stages:
+  - cleanup
+  - deploy
+  - check
+
+variables:
+  DEBIAN_FRONTEND: noninteractive
+  HEAT_STACK: pgsql-ha-example-ci
+  HEAT_STACK_VARS: "key_name=jenkins;network=private;availability_zone=nova"
+  OS_AUTH_URL: "SeT-Me"
+  OS_TENANT_NAME: SeT-Me
+  OS_USERNAME: jenkins
+  OS_PASSWORD: SeT-Me-SeCuRe
+  SSH_USER: ubuntu
+  SSH_PRIVATE_KEY: SeT-Me-SeCuRe
+  GPG_PRIVATE_KEY: SeT-Me-SeCuRe
+
+before_script:
+    - echo "$GPG_PRIVATE_KEY" | gpg --allow-secret-key-import --import /dev/stdin
+    - gpg .vault_password.gpg
+    - mkdir -p ${HOME}/.ssh || true
+    - echo "$SSH_PRIVATE_KEY" > ${HOME}/.ssh/id_rsa
+    - chmod 0600 ${HOME}/.ssh/id_rsa
+
+deploy_job:
+  stage: deploy
+  script:
+    - heat stack-create $HEAT_STACK -f postgres-hot.yml -P "$HEAT_STACK_VARS"
+    - bash scripts/fetch-dependencies.sh
+    - bash scripts/heat-wait-for-stack.sh $HEAT_STACK
+    - ansible-playbook -i scripts/ansible-heat-inventory.py playbooks/deploy.yml -e target=all -e repmgr_bootstrap=yes --syntax-check
+    - ansible-playbook -i scripts/ansible-heat-inventory.py -e target=all -e repmgr_bootstrap=yes -u $SSH_USER playbooks/deploy.yml
+  tags:
+    - docker
+
+check_job:
+  stage: check
+  script:
+    - ansible-playbook -i scripts/ansible-heat-inventory.py -u $SSH_USER playbooks/check_avail.yml
+    - ansible-playbook -i scripts/ansible-heat-inventory.py -u $SSH_USER playbooks/check_backup.yml
+    - ansible-playbook -i scripts/ansible-heat-inventory.py -u $SSH_USER playbooks/check_local_failover.yml
+    - ansible-playbook -i scripts/ansible-heat-inventory.py -u $SSH_USER playbooks/check_failover.yml
+  tags:
+    - docker
+
+cleanup_job:
+  stage: cleanup
+  script:
+    - for i in 1 2 3; do heat stack-delete $HEAT_STACK || true; sleep 10; done
+  when: always
+  tags:
+    - docker

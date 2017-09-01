@@ -1,0 +1,10 @@
+---
+
+pg_performance_install_dir: /usr/local/bin
+pg_performance_report_dir: /var/www/pgperf
+
+pg_performance_packages:
+  - python-jinja2
+  - python-yaml
+  - tidy
+  - nginx-light

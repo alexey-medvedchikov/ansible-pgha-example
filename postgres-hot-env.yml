@@ -1,0 +1,9 @@
+parameters:
+  db_name: db%index%
+  db_image: Ubuntu 14.04 amd64 official
+  db_flavor: m1.medium
+  lb_name: lb%index%
+  lb_image: Ubuntu 14.04 amd64 official
+  backup_name: backup%index%
+  backup_image: Ubuntu 14.04 amd64 official
+  backup_flavor: m1.medium

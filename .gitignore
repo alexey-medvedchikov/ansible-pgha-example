@@ -1,0 +1,17 @@
+/.vagrant
+/roles
+/.python-version
+/.vault_password
+/.gitlab-ci-secrets.sh
+/.environment.sh
+/playbooks/deploy.retry
+/bastion.*
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.py[co]
+*.elc
+auto-save-list
+tramp
+.\#*

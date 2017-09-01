@@ -1,0 +1,166 @@
+heat_template_version: 2013-05-23
+
+description: >
+  Create PostgreSQL database server cluster
+
+parameters:
+  network:
+    label: Network name for instances
+    type: string
+    default: default-localnet
+  availability_zone:
+    label: Availability zone for instances
+    type: string
+    default: nova
+  key_name:
+     label: SSH key name
+     type: string
+     description: Name of keypair to assign to servers
+  db_count:
+    description: number of database machines to deploy
+    type: number
+    default: 3
+    constraints:
+    - range:
+        min: 1
+        max: 10
+      description: must be between 1 and 10 servers.
+  db_name:
+    label: Name of each DB machine booted
+    description: Name for virtual machine.
+    type: string
+    default: db%index%
+  db_image:
+    label: OS Image name
+    type: string
+    description: Name of image to use for DB servers
+    default: Ubuntu Cloud 14.04.2 OverlayFS (tmpfs)
+  db_flavor:
+    label: Instance Type
+    description: Type of instance (flavor) to be used for DB servers
+    type: string
+    default: m1.large
+  lb_count:
+    description: number of loadbalance machines to deploy
+    type: number
+    default: 2
+    constraints:
+    - range:
+        min: 1
+        max: 10
+      description: must be between 1 and 10 servers.
+  lb_name:
+    label: Name of each LB machine booted
+    description: Name for virtual machine.
+    type: string
+    default: lb%index%
+  lb_image:
+    label: OS Image name
+    type: string
+    description: Name of image to use for LB servers
+    default: Ubuntu Cloud 14.04.2 OverlayFS (tmpfs)
+  lb_flavor:
+    label: Instance Type
+    description: Type of instance (flavor) to be used for LB servers
+    type: string
+    default: m1.medium
+  backup_count:
+    description: number of backup machines to deploy
+    type: number
+    default: 1
+    constraints:
+    - range:
+        min: 1
+        max: 10
+      description: must be between 1 and 10 servers.
+  backup_name:
+    label: Name of each backup machine booted
+    description: Name for virtual machine.
+    type: string
+    default: backup%index%
+  backup_image:
+    label: OS Image name
+    type: string
+    description: Name of image to use for backup servers
+    default: Ubuntu Cloud 14.04.2 OverlayFS (tmpfs)
+  backup_flavor:
+    label: Instance Type
+    description: Type of instance (flavor) to be used for backup servers
+    type: string
+    default: m1.large
+
+resources:
+  db_nodes:
+    type: "OS::Heat::ResourceGroup"
+    properties:
+      count: { get_param: db_count }
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          key_name: { get_param: key_name }
+          image: { get_param: db_image }
+          flavor: { get_param: db_flavor }
+          name: { get_param: db_name }
+          availability_zone: { get_param: availability_zone }
+          config_drive: True
+          user_data: |
+            #cloud-config
+            runcmd: echo 'Hello, Ubuntu!'
+          networks:
+          - network: { get_param: network }
+
+  lb_nodes:
+    type: "OS::Heat::ResourceGroup"
+    properties:
+      count: { get_param: lb_count }
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          key_name: { get_param: key_name }
+          image: { get_param: lb_image }
+          flavor: { get_param: lb_flavor }
+          name: { get_param: lb_name }
+          availability_zone: { get_param: availability_zone }
+          config_drive: True
+          user_data: |
+            #cloud-config
+            runcmd: echo 'Hello, Ubuntu!'
+          networks:
+          - network: { get_param: network }
+
+  backup_nodes:
+    type: "OS::Heat::ResourceGroup"
+    properties:
+      count: { get_param: backup_count }
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          key_name: { get_param: key_name }
+          image: { get_param: backup_image }
+          flavor: { get_param: backup_flavor }
+          name: { get_param: backup_name }
+          availability_zone: { get_param: availability_zone }
+          config_drive: True
+          user_data: |
+            #cloud-config
+            runcmd: echo 'Hello, Ubuntu!'
+          config_drive: True
+          networks:
+          - network: { get_param: network }
+
+outputs:
+  ansible_group_dbs:
+    description: db nodes hosts
+    value:
+      inventory_hostname: { get_attr: [ db_nodes, name ] }
+      ansible_ssh_host: { get_attr: [ db_nodes, first_address ] }
+  ansible_group_lbs:
+    description: lb nodes hosts
+    value:
+      inventory_hostname: { get_attr: [ lb_nodes, name ] }
+      ansible_ssh_host: { get_attr: [ lb_nodes, first_address ] }
+  ansible_group_backups:
+    description: backup nodes hosts
+    value:
+      inventory_hostname: { get_attr: [ backup_nodes, name ] }
+      ansible_ssh_host: { get_attr: [ backup_nodes, first_address ] }

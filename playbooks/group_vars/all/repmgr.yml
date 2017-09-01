@@ -1,0 +1,19 @@
+---
+
+repmgr_user: postgres
+repmgr_group: postgres
+repmgr_cluster_group: dbs
+repmgr_db_user: repmgr
+repmgr_db_name: repmgr
+repmgr_use_replication_slots: 1
+repmgr_pg_bindir: /usr/lib/postgresql/9.4/bin/
+repmgr_master_node: "{{ hostvars[groups['dbs'][0]].ansible_default_ipv4.address }}"
+repmgr_conninfo: "host={{ repmgr_node_address }} dbname={{ repmgr_db_name }} user={{ repmgr_db_user }} application_name={{ inventory_hostname }}"
+repmgr_master_response_timeout: 30
+repmgr_reconnect_attempts: 3
+repmgr_reconnect_interval: 10
+
+# We need random sleep because pgpool2 need to reattach nodes one-by-one
+repmgr_follow_command: "sleep $(shuf -i 1-10 -n 1) ; repmgr standby follow -f {{ repmgr_conf }} -W"
+
+repmgr_ssh_public_key: FillMe

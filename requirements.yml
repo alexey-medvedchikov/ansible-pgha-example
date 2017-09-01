@@ -1,0 +1,36 @@
+---
+
+- name: UnderGreen.postgresql
+  src: https://github.com/UnderGreen/postgresql.git
+  scm: git
+  version: 1.5.0
+
+- name: dj-wasabi.zabbix-agent
+  src: https://github.com/dj-wasabi/ansible-zabbix-agent.git
+  scm: git
+  version: 0.4.0
+
+- name: alexey-medvedchikov.pgpool2
+  src: https://github.com/alexey-medvedchikov/ansible-pgpool2.git
+  scm: git
+  version: v1.2.0
+
+- name: alexey-medvedchikov.pgbouncer
+  src: https://github.com/alexey-medvedchikov/ansible-pgbouncer.git
+  scm: git
+  version: v1.2.0
+
+- name: alexey-medvedchikov.repmgr
+  src: https://github.com/alexey-medvedchikov/ansible-repmgr.git
+  scm: git
+  version: v1.2.0
+
+- name: alexey-medvedchikov.barman
+  src: https://github.com/alexey-medvedchikov/ansible-barman.git
+  scm: git
+  version: v1.2.0
+
+- name: UnderGreen.syslog-ng
+  src: https://github.com/UnderGreen/ansible-syslog-ng.git
+  scm: git
+  version: v1.0.0

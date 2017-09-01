@@ -1,0 +1,30 @@
+---
+
+apt_repositories_base:
+  - repo: deb http://archive.ubuntu.com/ubuntu/ trusty main universe
+    state: present
+  - repo: deb http://archive.ubuntu.com/ubuntu/ trusty-updates main universe
+    state: present
+  - repo: deb http://archive.ubuntu.com/ubuntu/ trusty-security main universe
+    state: present
+
+apt_repositories:
+  - repo: deb http://archive.ubuntu.com/postgresql/ {{ ansible_distribution_release }}-pgdg main
+    state: present
+
+apt_keys:
+  - url: http://archive.ubuntu.com/key-postgresql.asc
+    state: present
+
+apt_preferences_list:
+  - package: '*'
+    pin: 'origin "apt.postgresql.org"'
+    priority: '500'
+
+apt_allow_unauthenicated_sources: true
+
+apt_base_packages: [ 'python', 'python-apt', 'lsb-release', 'sudo',
+  'gnupg-curl', 'git', 'wget', 'curl', 'rsync', 'netcat-openbsd',
+  'openssh-server', 'bsdutils', 'python-pycurl', 'python-httplib2',
+  'apt-transport-https', 'acl', 'python-pip', 'language-pack-ru' ]
+

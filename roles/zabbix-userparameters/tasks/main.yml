@@ -1,0 +1,8 @@
+---
+
+- name: Configure postgresql zabbix UserParameters
+  copy:
+    src: ../zabbix/postgresql.conf
+    dest: "{{ agent_include }}/postgresql.conf"
+  notify:
+    - restart zabbix-agent

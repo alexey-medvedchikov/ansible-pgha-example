@@ -1,0 +1,13 @@
+---
+
+pg_performance_config:
+  servers: |
+    [{% for inventory_hostname in groups['dbs'] %}
+    {{ '{' }}
+      'name': '{{ inventory_hostname }}',
+      'address': '{{ hostvars[inventory_hostname].ansible_default_ipv4.address }}',
+      'user': 'postgres',
+      'password': '{{ postgres_passwd }}'
+    {{ '}' }}{% if not loop.last %},{% endif %}
+    {% endfor %}]
+

@@ -1,0 +1,26 @@
+---
+
+- hosts: all
+  tasks:
+    - name: Add local host for checking purposes
+      add_host:
+        name: localhost
+        hostname: localhost
+        ansible_connection: local
+        ansible_python_interpreter: python2
+
+- hosts: localhost
+  become: no
+  tasks:
+    - name: Write .pgpass
+      copy:
+        dest: ~/.pgpass
+        content: |
+          *:*:*:postgres:{{ postgres_passwd }}
+        mode: 0600
+
+    - name: Check postgresql availability via load-balancers
+      shell: >
+        pgbench -i -s 10 -h {{ hostvars[item].ansible_ssh_host }}
+        -p {{ hostvars[item].pgbouncer_listen_port }} -U postgres
+      with_items: "{{ groups['lbs'] }}"

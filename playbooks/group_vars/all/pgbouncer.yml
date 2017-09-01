@@ -1,0 +1,27 @@
+---
+
+pgbouncer_hba_custom:
+  - type: host
+    user: all
+    database: all
+    comment: allow all connections
+    address: 0.0.0.0/0
+    method: md5
+
+pgbouncer_databases:
+  - name: "*"
+    host: 127.0.0.1
+    port: 5432
+
+pgbouncer_listen_addr: "*"
+pgbouncer_listen_port: 6432
+pgbouncer_default_pool_size: "{{ (groups['dbs'] | length) * 12 }}"
+pgbouncer_max_client_conn: 32768
+pgbouncer_max_db_connections: 32768
+pgbouncer_max_user_connections: 32768
+pgbouncer_pool_mode: "transaction"
+pgbouncer_pidfile: /var/run/postgresql/pgbouncer.pid
+
+pgbouncer_users:
+  - name: postgres
+    pass: "{{ postgres_passwd }}"

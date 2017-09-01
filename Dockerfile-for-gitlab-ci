@@ -1,0 +1,22 @@
+FROM ubuntu:trusty
+MAINTAINER Alexey Medvedchikov <alexey.medvedchikov@gmail.com>
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN echo 'deb http://archive.ubuntu.com/ubuntu trusty main restricted universe multiverse' > /etc/apt/sources.list && \
+    echo 'deb http://archive.ubuntu.com/ubuntu trusty-updates main restricted universe multiverse' >> /etc/apt/sources.list && \
+    echo 'deb http://archive.ubuntu.com/ubuntu trusty-security main restricted universe multiverse' >> /etc/apt/sources.list && \
+    apt-get update && \
+    apt-get install -y \
+        libyaml-dev \
+        python-dev \
+        python-pip \
+        git \
+        build-essential \
+        gnupg \
+        openssh-client \
+        postgresql-contrib && \
+    pip install \
+        ansible \
+        python-heatclient==0.8.0
+

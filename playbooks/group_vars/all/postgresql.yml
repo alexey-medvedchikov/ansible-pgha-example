@@ -1,0 +1,96 @@
+---
+
+# Disable repository add through role
+postgresql_apt_key_id:
+postgresql_apt_key_url:
+postgresql_apt_repository:
+postgresql_apt_pin_priority:
+
+postgresql_pg_hba_custom:
+  - type: host
+    user: all
+    database: all
+    comment: allow all connections
+    address: 0.0.0.0/0
+    method: md5
+  - type: host
+    user: "{{ repmgr_db_user }}"
+    database: replication
+    comment: replication
+    address: 0.0.0.0/0
+    method: md5
+
+postgresql_version: "9.4"
+postgresql_listen_addresses: "*"
+postgresql_max_connections: 256
+postgresql_superuser_reserved_connections: 10
+postgresql_max_replication_slots: 32
+postgresql_max_wal_senders: 32
+postgresql_full_page_writes: "on"
+postgresql_hot_standby: "on"
+postgresql_archive_mode: "on"
+postgresql_archive_command: rsync -e "ssh -o StrictHostKeyChecking=no" -a %p {{ barman_user }}@{{ hostvars[groups['backups'][0]].ansible_default_ipv4.address }}:/var/lib/barman/main/incoming/%f
+postgresql_restore_command: ssh -o StrictHostKeyChecking=no {{ barman_user }}@{{ hostvars[groups['backups'][0]].ansible_default_ipv4.address }} barman get-wal main %f > %p
+
+postgresql_wal_level: logical
+postgresql_wal_keep_segments: 16
+postgresql_wal_sync_method: "fdatasync"
+postgresql_work_mem: 64MB
+postgresql_maintenance_work_mem: 256MB
+postgresql_effective_cache_size: "{{ (ansible_memtotal_mb / 2) | int }}MB"
+postgresql_shared_buffers: "{{ (ansible_memtotal_mb / 4 ) | int }}MB"
+postgresql_checkpoint_segments: 32
+postgresql_checkpoint_completion_target: 0.9
+postgresql_wal_log_hints: "on"
+postgresql_autovacuum: "on"
+postgresql_log_line_prefix: "%m app=%a,host=%r,user=%u,db=%d,pid=%p,xid=%x "
+postgresql_log_autovacuum_min_duration: 0
+postgresql_log_checkpoints: "on"
+postgresql_log_lock_waits: "on"
+postgresql_log_temp_files: "16MB"
+postgresql_deadlock_timeout: "5s"
+postgresql_shared_preload_libraries:
+  - repmgr_funcs
+  - pg_stat_statements
+
+# Управление поведением hotstandby при конфликте репликации и запросов
+# on - hot-standby даёт обратную связь master и при конфликте останавливает
+#     репликацию или выполнение запросов
+# off - hot-standby принудительно завершает мещающие репликации запросы
+postgresql_hot_standby_feedback: "on"
+
+# Максимальное время лага репликации при котором происходит разрешение
+# конфликтов. Т.е. если лаг репликации более этой настройки, то конфликтующие
+# запросы будут завершены или остановлены в зависимости от hot_standby_feedback
+# Этот параметр применяется к hot-standby серверу, который подключен к master и
+# получает данные репликации через сеть, т.е. имеется ввиду лаг между
+# локальными данными и данными, полученными через wal receiver.
+postgresql_max_standby_streaming_delay: 300
+
+# Максимальное время лага репликации при котором происходит разрешение
+# конфликтов. Т.е. если лаг репликации более этой настройки, то конфликтующие
+# запросы будут завершены или остановлены в зависимости от hot_standby_feedback
+# Этот параметр применяется к hot-standby серверу, который догоняет репликацию
+# из локальных WAL-файлов (например, сервер был выключен некоторое время), т.е.
+# имеется ввиду лаг между локальными данными и последними данными в WAL-файлах.
+postgresql_max_standby_archive_delay: 300
+
+# Управление синхронностью репликации по имени приложения
+# Если в uri соединения указать application_name, присутствующий в этом списке,
+#     то репликация этого приложения будет синхронной
+postgresql_synchronous_standby_names:
+  - "*"
+
+# Управление синхронностью транзакции и записью на диски
+# off - потерянные транзакции попадут во время wal_writer_delay * 3
+# local - закрывать транзакцию только после сброса на локальные диски
+# remote_write - закрывать транзакцию только после сброса на локальные диски и
+#     буфера записи синхронного слейва (состояние sync в pg_stat_replication)
+# on - закрывать транзакцию только после сброса на локальные диски и диски
+#     синхронного слейва (состояние sync в pg_stat_replication)
+postgresql_synchronous_commit: "local"
+
+# Количество миллисекунд между принудительными сбросами на диск журнала транзакций
+#    и 1/3 времени которая может быть утеряна при падении сервера
+postgresql_wal_writer_delay: 500
+

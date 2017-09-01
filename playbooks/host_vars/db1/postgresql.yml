@@ -1,0 +1,17 @@
+---
+
+postgresql_users:
+  - name: postgres
+    pass: "{{ postgres_passwd }}"
+
+postgresql_database_extensions:
+  - db: template1
+    extensions:
+      - pgstattuple
+      - pg_stat_statements
+      - pg_buffercache
+  - db: postgres
+    extensions:
+      - pgstattuple
+      - pg_stat_statements
+      - pg_buffercache

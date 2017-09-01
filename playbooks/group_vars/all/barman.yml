@@ -1,0 +1,20 @@
+---
+
+barman_servers:
+  - name: main
+    description: Main PostgreSQL Database
+    ssh_command: ssh -o StrictHostKeyChecking=no -o Compression=yes postgres@{{ hostvars[groups['dbs'][0]].ansible_default_ipv4.address }}
+    conn_host: "{{ hostvars[groups['dbs'][0]].ansible_default_ipv4.address }}"
+    conn_port: 5432
+    conn_user: postgres
+    conn_password: "{{ postgres_passwd }}"
+    minimum_redundancy: "{{ barman_minimum_redundancy }}"
+    retention_policy: ""
+
+barman_user: barman
+barman_compression: custom
+barman_custom_compression_filter: xz -cz9
+barman_custom_decompression_filter: xz -cd
+barman_immediate_checkpoint: true
+barman_ssh_public_key: FillMe
+

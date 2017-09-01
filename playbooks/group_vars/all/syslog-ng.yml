@@ -1,0 +1,18 @@
+---
+
+syslog_ng_mode: client
+syslog_ng_check_syntax_before_reload: false
+syslog_ng_config_includes:
+  - "scl.conf"
+
+syslog_ng_client_destinations:
+  - "logstash.local":
+      proto: syslog
+      port: 6000
+      filters:
+        - f_local
+      extra:
+        so-keepalive: "yes"
+
+syslog_ng_config_post_includes:
+  - "/etc/syslog-ng/conf.d/*.conf"

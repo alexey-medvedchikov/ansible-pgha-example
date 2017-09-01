@@ -1,0 +1,30 @@
+---
+
+- name: FIXME -- raise postgres user nofile
+  copy:
+    dest: /etc/security/limits.d/postgres.conf
+    content: |
+      postgres  soft  nofile  65000
+      postgres  hard  nofile  65535
+
+- name: FIXME -- Build hosts file
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '.*{{ item }}$'
+    line: "{{ hostvars[item].ansible_default_ipv4.address }} {{item}}"
+    state: present
+  when: hostvars[item].ansible_default_ipv4.address is defined
+  with_items: "{{ groups['all'] }}"
+
+- name: FIXME -- disable DNS in ssh
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: '\s*UseDNS\s+(no|yes)\s*'
+    line: "UseDNS yes"
+  register: __sshd_config
+
+- name: FIXME -- restart ssh service if file changed
+  service:
+    name: ssh
+    state: restarted
+  when: __sshd_config|changed
